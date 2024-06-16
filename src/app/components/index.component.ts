@@ -1,65 +1,50 @@
-/* eslint-disable arrow-body-style */
-import { Component, ViewChild, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ElementRef } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { HttpClient } from "@angular/common/http";
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
 import { NgFor, NgIf } from "@angular/common";
-import { switchMap, distinctUntilChanged, catchError, map, take } from "rxjs/operators";
-import { forkJoin, of, takeUntil, ReplaySubject, Observable, lastValueFrom  } from "rxjs";
-import { Breakpoints, BreakpointObserver } from "@angular/cdk/layout";
+import { FormsModule } from "@angular/forms";
+import { distinctUntilChanged, mergeMap, Subject, takeUntil, tap } from 'rxjs';
+import { ComponentHostDirective } from './component-host.directive';
 
-import { IndexChildComponent } from "./index-child.component";
-
-import { CarsComponent } from "./child-components/cars.component";
-
-interface LabelContent {
-    [key: string]: string;
-}
+import { Service, ServiceComponentType, servicesComponentFactory, ServiceTypes } from "./services-factory";
 
 @Component({
-    selector: "index-page",
-    templateUrl: "./index.component.html",
-    styleUrls: ["./index.component.css"],
-    imports: [
-        NgIf,
-        NgFor,
-        FormsModule,
-        IndexChildComponent,
-
-    ],
-    standalone: true,
-    host: {
-        "[attr.data-component]": "index-page"
-    },
-    providers: [
-    ]
+  selector: 'index-page',
+  standalone: true,
+  imports: [ComponentHostDirective, FormsModule, NgIf, NgFor],
+  templateUrl: './index.component.html',
+  styleUrls: ['./index.component.scss'],
 })
-
 export class IndexPageComponent implements OnInit, OnDestroy {
-    private _destroyed$: ReplaySubject<boolean> = new ReplaySubject(1);
+  @ViewChild(ComponentHostDirective, { static: true }) componentHost!: ComponentHostDirective;
 
-    public mobile_layout: boolean = false;
 
-    public readonly custom_component: any = CarsComponent;
+  public service_args: Service = {
+      id: 0,
+      title: "Hardware Engineering",
+      description: "testing"
+  }
 
-    constructor(private responsive: BreakpointObserver, private changeDetectorRef: ChangeDetectorRef) {
+  constructor(private readonly route: ActivatedRoute,) {
 
+  }
+
+  destroy: Subject<void> = new Subject<void>();
+
+  ngOnInit(): void {
+  }
+
+  loadComponent(service: Service): void {
+    const { viewContainerRef }: ComponentHostDirective = this.componentHost;
+    viewContainerRef.clear();
+    if (service.id !== 0 && service.id !== 1) {
+        service.id = 0;
+        return;
     }
+    const { instance } = viewContainerRef.createComponent<ServiceComponentType>(servicesComponentFactory[service.id as ServiceTypes]);
+    instance.data = service;
+  }
 
-    public ngOnInit() {
-        this.responsive.observe([
-            Breakpoints.XSmall,
-            Breakpoints.Small
-        ]).subscribe((result) => {
-            if (result.matches) {
-                this.mobile_layout = true;
-            } else {
-                this.mobile_layout = false;
-            }
-        });
-    }
-
-    public ngOnDestroy() {
-        this._destroyed$.next(true);
-        this._destroyed$.complete();
-    }
+  ngOnDestroy(): void {
+    this.destroy.next();
+  }
 }

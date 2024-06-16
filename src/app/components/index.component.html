@@ -1,3 +1,8 @@
 <div style="text-align:center;">
-  <index-child [custom_component]="custom_component"></index-child>
+  <h1> TESTING </h1>
+  <input type="number" max="1" min="0" [(ngModel)]="service_args.id">
+  <input type="text" [(ngModel)]="service_args.title">
+  <input type="text" [(ngModel)]="service_args.description">
+  <button (click)="loadComponent(service_args)">Load Data</button>
+  <ng-templage appComponentHost></ng-templage>
 </div>
